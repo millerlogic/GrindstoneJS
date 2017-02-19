@@ -136,49 +136,6 @@
 	};
 
 /**
- * Append child elements to the current object
- * @param {string|object} element
- * @returns {object} current instance of Grindstone
- */
-
-	$.fn.append = function(element) {
-		var isHTML = typeof element === 'string' && element.match(/(<).+(>)/);
-		var i = -1, len = this.length;
-		this.each(function() {
-			i++;
-			if (typeof element === 'string') {
-				if (isHTML) {
-					this.innerHTML += element;
-				} else {
-					var textNode = document.createTextNode(element);
-					this.appendChild(textNode);
-				}
-			} else if (priv.isElementArray(element)) {
-				if (i == len - 1) {
-					// Append elements directly if last.
-					for (var j = 0; j < element.length; j++) {
-						this.appendChild(element[j]);
-					}
-				} else {
-					// Append cloned elements for all but the last.
-					for (var j = 0; j < element.length; j++) {
-						this.appendChild(element[j].cloneNode(true));
-					}
-				}
-			} else {
-				if (i == len - 1) {
-					// Append element itself if last.
-					this.appendChild(element);
-				} else {
-					// Append a clone for all but the last.
-					this.appendChild(element.cloneNode(true));
-				}
-			}
-		});
-		return this;
-	};
-
-/**
  * Set or return the value of the specified attribute
  * @param {string} attribute
  * @param {string} value - optional
@@ -700,6 +657,39 @@
 		return content ? this : text;
 	};
  
+
+	priv.insert = function(set, position, content) {
+		if (typeof content === 'string') {
+			if (content.match(/(<).+(>)/)) {
+				set.each(function() {
+					this.insertAdjacentHTML(position, content);
+				});
+			} else {
+				set.each(function() {
+					this.insertAdjacentText(position, content);
+				});
+			}
+		} else {
+			var elements = content instanceof Array ? content : $(content);
+			var i = -1, len = set.length;
+			set.each(function() {
+				i++;
+				if (i == len - 1) {
+					// Append elements directly if last.
+					for (var j = 0; j < elements.length; j++) {
+						this.insertAdjacentElement(position, elements[j]);
+					}
+				} else {
+					// Append cloned elements for all but the last.
+					for (var j = 0; j < elements.length; j++) {
+						this.insertAdjacentElement(position, elements[j].cloneNode(true));
+					}
+				}
+			});
+		}
+		return set;
+	};
+
 /**
  * Insert new content before a target element
  * @param {string|object} content
@@ -707,23 +697,7 @@
  */
 
 	$.fn.before = function(content) {
-		this.each(function() {
-			if (typeof content === 'string') {
-				if (content.match(/(<).+(>)/)) {
-					this.insertAdjacentHTML('beforebegin', content);
-				} else {
-					var self = this;
-					var dom = d.querySelectorAll(content);
-					dom = Array.prototype.slice.call(dom);
-					dom.forEach(function(item) {
-						self.parentNode.insertBefore(item, self);
-					});
-				}
-			} else {
-				this.parentNode.insertBefore(content, this);
-			}
-		});
-		return this;
+		return priv.insert(this, 'beforebegin', content);
 	};
 
 /**
@@ -733,24 +707,29 @@
  */
 
 	$.fn.after = function(content) {
-		this.each(function() {
-			if (typeof content === 'string') {
-				if (content.match(/(<).+(>)/)) {
-					this.insertAdjacentHTML('afterend', content);
-				} else {
-					var self = this;
-					var dom = d.querySelectorAll(content);
-					dom = Array.prototype.slice.call(dom);
-					dom.forEach(function(item) {
-						self.parentNode.insertBefore(item, self.nextSibling);
-					});
-				}
-			} else {
-				this.parentNode.insertBefore(content, this.nextSibling);
-			}
-		});
-		return this;
+		return priv.insert(this, 'afterend', content);
 	};
+
+/**
+ * Append child elements to the current object
+ * @param {string|object} content
+ * @returns {object} current instance of Grindstone
+ */
+
+	$.fn.append = function(content) {
+		return priv.insert(this, 'beforeend', content);
+	};
+
+/**
+ * Prepend a new element or new content
+ * @param {string|object} content
+ * @returns {object} current instance of Grindstone
+ */
+
+	$.fn.prepend = function(content) {
+		return priv.insert(this, 'afterbegin', content);
+	};
+
 
 /**
  * Create hover and active states
@@ -830,32 +809,6 @@
 		} else {
 			throw new Error('offset() position must be a string: acceptable values are "left" and "top".');
 		}
-	};
-
-/**
- * Prepend a new element or new content
- * @param {object|string} element
- * @returns {object} current instance of Grindstone
- */
-
-	$.fn.prepend = function(element) {
-		this.each(function() {
-			if (typeof element === 'string') {
-				if (element.match(/(<).+(>)/)) {
-					this.insertAdjacentHTML('afterbegin', element);
-				} else {
-					var self = this;
-					var dom = d.querySelectorAll(element);
-					dom = Array.prototype.slice.call(dom);
-					dom.forEach(function(item) {
-						self.insertBefore(item, self.firstChild);
-					});
-				}
-			} else {
-				this.insertBefore(element, this.firstChild);
-			}
-		});
-		return this;
 	};
 
 /**
